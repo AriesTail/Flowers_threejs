@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<title>Show me the flower!</title>
+<script src="js/three.js"></script>
+<script src="js/MTLLoader.js"></script>  
+<script src="js/OBJLoader.js"></script>  
+
+<script>
+	var flowercount = 30;
+	var mouseX = 0, mouseY = 0;
+	var windowHalfX = window.innerWidth / 2;
+	var windowHalfY = window.innerHeight / 2;
+    var renderer;
+    function initThree() {
+		renderer = new THREE.WebGLRenderer();
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		renderer.setPixelRatio( window.devicePixelRatio );
+		renderer.setClearColor(0x000000, 1.0);
+		document.body.appendChild(renderer.domElement);
+		document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+    }
+
+    var camera;
+    function initCamera() {
+		camera = new THREE.PerspectiveCamera(45, window.innerWidth
+			/ window.innerHeight, 1, 8000);
+		camera.position.x = 0;
+		camera.position.y = -50;
+		camera.position.z = 800;
+		camera.up.x = 0;
+		camera.up.y = 1;
+		camera.up.z = 0;
+		camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+    
+    var scene;
+	    function initScene() {
+		scene = new THREE.Scene();
+    }
+
+    function initLight() {
+		var light = new THREE.AmbientLight( 0x404040, 1 );
+		scene.add( light );
+		var pointLight1 = new THREE.PointLight( 0xffffff, 2 );
+		pointLight1.position.set(50, 200, -10);
+		scene.add( pointLight1 );
+		var pointLight2 = new THREE.PointLight( 0xffffff, 2 );
+		pointLight2.position.set(-50, 200, 10);
+		scene.add( pointLight2 );
+    }
+
+    
+    var leaf = new THREE.Object3D(),petal = new THREE.Object3D();
+    var loadcompelete = -1;
+    var onProgress = function(xhr) {
+	    if (xhr.lengthComputable) {
+		var percentComplete = xhr.loaded / xhr.total * 100;
+		console.log( Math.round(percentComplete, 2) + '% downloaded');
+	    }
+	};
+	var onError = function(xhr) {
+	};
+    function initObject() {
+	var geometry = new THREE.Geometry();
+	geometry.vertices.push(new THREE.Vector3(-500, 0, 0));
+	geometry.vertices.push(new THREE.Vector3(500, 0, 0));
+	var line = new THREE.Line(geometry, new THREE.LineBasicMaterial({
+		color : 0x000000,
+		opacity : 1
+	}));
+	scene.add(line);
+	line = line.clone();
+	line.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI/2);
+	scene.add(line);
+	line = line.clone();
+	line.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI/2);
+	scene.add(line);
+	console.log('add lines');
+	
+	
+	var mtlLoader1 = new THREE.MTLLoader();
+		mtlLoader1.setPath('resources/model/');
+		mtlLoader1.setTexturePath('resources/texture/');
+		mtlLoader1.load('leaves.mtl', function(materials1) {
+		    materials1.preload();
+		    var objLoader1 = new THREE.OBJLoader();
+		    objLoader1.setMaterials(materials1);
+		    objLoader1.setPath('resources/model/');
+		    objLoader1.load('leaves.obj', function(obj) {
+				leaf = obj;
+				console.log('leaf complete');
+				onLoad();
+		    }, onProgress, onError);
+		});
+		var mtlLoader2 = new THREE.MTLLoader();
+		mtlLoader2.setPath('resources/model/');
+		mtlLoader2.setTexturePath('resources/texture/');
+	    mtlLoader2.load('petal.mtl', function(materials2) {
+		    materials2.preload();
+		    var objLoader2 = new THREE.OBJLoader();
+		    objLoader2.setMaterials(materials2);
+		    objLoader2.setPath('resources/model/');
+		    objLoader2.load('petal.obj', function(obj) {
+				petal = obj;
+				console.log('petal complete');
+				onLoad();
+		    }, onProgress, onError);
+		});
+    }
+    
+    var flowers = new Array();
+    var petalses = new Array();
+    var leaves = new Array();
+    var petalgroups = new Array();
+    var rox = new Array();
+    var roz = new Array();
+    var movex = new Array();
+    var movey = new Array();
+    var movez = new Array();
+    var dirx = new Array();
+    var dirz = new Array();
+    var leafcompeletes = new Array();
+    var stillgrows = new Array();
+    function initFlower(i) {
+		var petals = new Array();
+	 	var petalgroup = new THREE.Group();
+	 	var flowergroup = new THREE.Group();
+		for (var j = 0; j < 6; j++) {
+		    var petal_t = petal.clone(true);
+		    petal_t.position.x = 0;
+	   		petal_t.position.y = 0;
+	   		petal_t.position.z = 0;
+		    if (j % 2 == 0) {
+				petal_t.position.y = 8.3;
+		    }
+		    petal_t.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 3 * j);
+		    petal_t.rotateOnAxis(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+		    petal_t.scale.x = 1;
+		    petal_t.scale.y = 1;
+		    petal_t.scale.z = 1;
+		    petals.push(petal_t);
+		    petalgroup.add(petal_t)
+		}
+		petalses.push(petals);
+	    petalgroup.scale.x = 0.001;
+		petalgroup.scale.y = 0.001;
+		petalgroup.scale.z = 0.001;
+		petalgroup.position.y = 0;
+		petalgroups.push(petalgroup);
+		leaf_cur = leaf.clone();
+		leaf_cur.scale.x = 0.001;
+		leaf_cur.scale.y = 0.001;
+		leaf_cur.scale.z = 0.001;
+		leaf_cur.position.x = 0;
+		leaf_cur.position.y = 0;
+		leaf_cur.position.z = 0;
+		leaf_cur.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI);
+		leaves.push(leaf_cur);
+		flowergroup.add(leaf_cur);
+		flowergroup.add(petalgroup);
+		flowers.push(flowergroup);
+		scene.add(flowergroup);
+		
+		rox.push(Math.floor(Math.random()*(5-1+1)+1));
+		roz.push(Math.floor(Math.random()*(5-1+1)+1));
+		movex.push(Math.floor(Math.random()*(50+50+1)-50)/60);
+		movey.push(Math.floor(Math.random()*(50-20+1)+20)/50);
+		movez.push(Math.floor(Math.random()*(50+50+1)-50)/60);
+		num1 = Math.random()*10-5;
+		num2 = Math.random()*10-5;
+		if(num1 >= 0) {
+		    dirx.push(1);
+		} else {
+		    dirx.push(-1);
+		}
+		if(num2 >= 0) {
+		    dirz.push(1);
+		} else {
+		    dirz.push(-1);
+		}
+		
+		leafcompeletes.push(0);
+		stillgrows.push(1);
+		
+		console.log('flower' + i + ' ready');
+		if(i == flowercount-1){
+		    animate();
+		}
+    }
+
+    var growcomplete = 0;
+    function startgrow(i) {
+		console.log('flower' + i + ' grows');
+		if(leafcompeletes[i] != 1){
+		    leaves[i].scale.x += 0.002;
+		    leaves[i].scale.y += 0.005;
+		    leaves[i].scale.z += 0.002;
+		    leaves[i].rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI /3000);
+		    leaves[i].rotateOnAxis(new THREE.Vector3(dirx[i], 0, 0), Math.PI /rox[i] /600);
+		    leaves[i].rotateOnAxis(new THREE.Vector3(0, 0, dirz[i]), -Math.PI /roz[i] /600);
+		    if(leaves[i].scale.y > 0.5){
+				leafcompeletes[i] = 1;
+		    } 
+		} else {
+		    for (var j = 0; j < petalses[i].length; j++) {
+				petal = petalses[i][j];
+				petal.rotateOnAxis(new THREE.Vector3(0, 0, -1), Math.PI / 2 / 50);
+		    }
+		    petalgroups[i].scale.x += 0.01;
+		    petalgroups[i].scale.y += 0.01;
+		    petalgroups[i].scale.z += 0.01;
+		    petalgroups[i].rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI /3000);
+		    petalgroups[i].rotateOnAxis(new THREE.Vector3(-dirx[i], 0, 0), Math.PI /rox[i] /300);
+		    petalgroups[i].rotateOnAxis(new THREE.Vector3(0, 0, dirz[i]), Math.PI /roz[i] /300);
+			if(petalgroups[i].scale.x > 0.5) {
+			    console.log(growcomplete);
+			    growcomplete += 1;
+			    stillgrows[i] = 0;
+			}
+		}
+		if (stillgrows[i] == 1) {
+		    flowers[i].position.x += movex[i];
+		    flowers[i].position.y += movey[i];
+		    flowers[i].position.z += movez[i];
+		}
+    }
+
+    function onDocumentMouseMove(event) {
+		mouseX = (event.clientX - windowHalfX) / 2;
+		mouseY = (event.clientY - windowHalfY) / 2;
+    }
+    function onLoad() {
+		loadcompelete++;
+		console.log(loadcompelete);
+		if(loadcompelete == 1){
+		    for (var i = 0; i < flowercount; i++) {
+				initFlower(i);
+		    }
+		}
+	}
+    function animate() {
+		requestAnimationFrame(animate);
+		render();
+    }
+    function render() {
+		if(growcomplete < flowercount) {
+			for (var i = 0; i < flowercount; i++) {
+			    if(stillgrows[i] != 0){
+				    startgrow(i);
+				}
+			}
+		}
+		camera.position.x += (mouseX - camera.position.x) * .08;
+		camera.position.y += (-mouseY - camera.position.y) * .08;
+		camera.lookAt(scene.position);
+		renderer.render(scene, camera);
+    }
+
+    function threeStart() {
+
+	initScene();
+	initThree();
+	initCamera();
+	initLight();
+	initObject();
+	
+    }
+</script>
+</head>
+
+
+<body>
+	<script>
+	threeStart()
+    </script>
+</body>
+</html>
